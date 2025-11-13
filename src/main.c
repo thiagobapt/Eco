@@ -26,11 +26,14 @@ int main() {
         insertCharArray(&characters, buffer[0]);
     }
 
+    //characters is freed in scan
     TokenArray tokens = scan(&characters);
 
     fclose(fptr);
 
     printf("\n");
+
+    freeTokenArray(&tokens);
 
     if(hadError) {
         return 65;

@@ -17,7 +17,7 @@ void insertCharArray(CharArray *arr, char element) {
 }
 
 void initTokenArray(TokenArray *arr, size_t initialSize) {
-    arr->array = malloc(initialSize * sizeof(char));
+    arr->array = malloc(initialSize * sizeof(struct Token));
     arr->used = 0;
     arr->size = initialSize;
 }
