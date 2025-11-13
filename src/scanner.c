@@ -7,23 +7,35 @@
 #include <string.h>
 
 size_t srcSize;
-size_t i;
+size_t currentPos;
 size_t line = 1;
+char currentChar;
 
 const int initialSize = 100;
 
-TokenArray arr;
+TokenArray tokens;
 CharArray *src;
 
 bool isAtEnd() {
-    return i == srcSize;
+    return currentPos == srcSize;
+}
+
+void advance() {
+    if(isAtEnd()) {
+        currentChar = '\0';
+        return;
+    }
+
+    currentChar = src->array[currentPos];
+    
+    currentPos++;
 }
 
 char peek() {
     if(isAtEnd()) {
         return "\0";
     }
-    return src->array[i + 1];
+    return src->array[currentPos + 1];
 }
 
 bool match(char expected) {
@@ -35,44 +47,80 @@ bool match(char expected) {
         return false;
     }
 
-    i++;
+    currentPos++;
 
     return true;
 }
 
 
-void addToken(TokenType t, TokenArray *arr) {
+void addToken(TokenType t) {
     struct Token token;
 
     token.type = t;
 
-    insertTokenArray(arr, token);
+    insertTokenArray(&tokens, token);
 }
 
-void scanToken(char c, TokenArray *arr) {
-    printf("%c", c);
+void string() {
+    size_t start = currentPos;
+
+    while (peek() != '"' && !isAtEnd()) {
+        printf("%c", currentChar);
+        if(peek() == '\n') {
+            line++;
+        }
+        advance();
+    }
+
+    if(isAtEnd()) {
+        error(line, "Unterminated string");
+        exit(65);
+    }
+
+    size_t stringLength = currentPos - start;
+
+    char string[stringLength];
+
+    for (size_t i = start + 1; i < currentPos - 1; i++) {
+        string[i - start] = src->array[i];
+    }
+
+    printf("%s", string);
+    
+}
+
+void scanToken() {
+    advance();
+
+    char c = currentChar;
+
+    // printf("%c", c);
+
     switch (c) {
-        case '(': addToken(LEFT_PAREN, arr); break;
-        case ')': addToken(RIGHT_PAREN, arr); break;
-        case '{': addToken(LEFT_BRACE, arr); break;
-        case '}': addToken(RIGHT_BRACE, arr); break;
-        case ',': addToken(COMMA, arr); break;
-        case '.': addToken(DOT, arr); break;
-        case '-': addToken(MINUS, arr); break;
-        case '+': addToken(PLUS, arr); break;
-        case ';': addToken(SEMICOLON, arr); break;
-        case '*': addToken(STAR, arr); break;
+        case '(': addToken(LEFT_PAREN); break;
+        case ')': addToken(RIGHT_PAREN); break;
+        case '{': addToken(LEFT_BRACE); break;
+        case '}': addToken(RIGHT_BRACE); break;
+        case ',': addToken(COMMA); break;
+        case '.': addToken(DOT); break;
+        case '-': addToken(MINUS); break;
+        case '+': addToken(PLUS); break;
+        case ';': addToken(SEMICOLON); break;
+        case '*': addToken(STAR); break;
         case '!':
-            addToken(match('=') ? BANG_EQUAL : BANG, arr);
+            addToken(match('=') ? BANG_EQUAL : BANG);
             break;
         case '=':
-            addToken(match('=') ? EQUAL_EQUAL : EQUAL, arr);
+            addToken(match('=') ? EQUAL_EQUAL : EQUAL);
             break;
         case '<':
-            addToken(match('=') ? LESS_EQUAL : LESS, arr);
+            addToken(match('=') ? LESS_EQUAL : LESS);
             break;
         case '>':
-            addToken(match('=') ? GREATER_EQUAL : GREATER, arr);
+            addToken(match('=') ? GREATER_EQUAL : GREATER);
+            break;
+        case '"':
+            string();
             break;
         case ' ':
         case '\r':
@@ -83,7 +131,7 @@ void scanToken(char c, TokenArray *arr) {
             line++;
             break;
         default:
-            error(line, formatString("Unexpected character: ", c));
+            error(line, "Unexpected character");
             exit(65);
     }
 }
@@ -92,15 +140,15 @@ TokenArray scan(CharArray *characters) {
 
     src = characters;
     
-    initTokenArray(&arr, initialSize);
+    initTokenArray(&tokens, initialSize);
 
-    size_t srcSize = src->size;
+    srcSize = src->size;
 
-    for (i = 0; i < srcSize; i++) {
-        scanToken(src->array[i], &arr);
+    while (isAtEnd() == false) {
+        scanToken();
     }
 
     freeCharArray(src);
     
-    return arr;
+    return tokens;
 }
