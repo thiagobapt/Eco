@@ -7,35 +7,35 @@
 #include <string.h>
 
 size_t srcSize;
-size_t currentPos;
+size_t currentPos = -1;
 size_t line = 1;
 char currentChar;
 
 const int initialSize = 100;
 
 TokenArray tokens;
-CharArray *src;
+CharArray src;
 
 bool isAtEnd() {
     return currentPos == srcSize;
 }
 
 void advance() {
+    currentPos++;
+
     if(isAtEnd()) {
         currentChar = '\0';
         return;
     }
 
-    currentChar = src->array[currentPos];
-    
-    currentPos++;
+    currentChar = src.array[currentPos];
 }
 
 char peek() {
     if(isAtEnd()) {
-        return "\0";
+        return '\0';
     }
-    return src->array[currentPos + 1];
+    return src.array[currentPos + 1];
 }
 
 bool match(char expected) {
@@ -62,14 +62,19 @@ void addToken(TokenType t) {
 }
 
 void string() {
+    advance();
+
     size_t start = currentPos;
 
-    while (peek() != '"' && !isAtEnd()) {
-        printf("%c", currentChar);
+    while (!isAtEnd()) {
         if(peek() == '\n') {
             line++;
         }
         advance();
+
+        if(peek() == '"') {
+            break;
+        }
     }
 
     if(isAtEnd()) {
@@ -77,15 +82,17 @@ void string() {
         exit(65);
     }
 
+    advance();
+
     size_t stringLength = currentPos - start;
 
-    char string[stringLength];
+    char string[stringLength + 1];
 
-    for (size_t i = start + 1; i < currentPos - 1; i++) {
-        string[i - start] = src->array[i];
-    }
+    strncpy(string, src.array + start, stringLength);
 
-    printf("%s", string);
+    string[stringLength] = '\0';
+
+    addToken()
     
 }
 
@@ -94,7 +101,7 @@ void scanToken() {
 
     char c = currentChar;
 
-    // printf("%c", c);
+    printf("%c", c);
 
     switch (c) {
         case '(': addToken(LEFT_PAREN); break;
@@ -119,9 +126,7 @@ void scanToken() {
         case '>':
             addToken(match('=') ? GREATER_EQUAL : GREATER);
             break;
-        case '"':
-            string();
-            break;
+        case '"': string(); break;
         case ' ':
         case '\r':
         case '\t':
@@ -136,19 +141,17 @@ void scanToken() {
     }
 }
 
-TokenArray scan(CharArray *characters) {
+TokenArray scan(CharArray characters) {
 
     src = characters;
     
     initTokenArray(&tokens, initialSize);
-
-    srcSize = src->size;
+    
+    srcSize = src.size;
 
     while (isAtEnd() == false) {
         scanToken();
     }
-
-    freeCharArray(src);
     
     return tokens;
 }

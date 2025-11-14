@@ -16,7 +16,7 @@ int main() {
 
     CharArray characters;
 
-    initCharArray(&characters, 100);
+    initCharArray(&characters, 1);
 
     const int BUFFER_SIZE = 1;
 
@@ -26,14 +26,14 @@ int main() {
         insertCharArray(&characters, buffer[0]);
     }
 
-    //characters is freed in scan
-    TokenArray tokens = scan(&characters);
+    TokenArray tokens = scan(characters);
 
     fclose(fptr);
 
     printf("\n");
 
     freeTokenArray(&tokens);
+    freeCharArray(&characters);
 
     if(hadError) {
         return 65;
